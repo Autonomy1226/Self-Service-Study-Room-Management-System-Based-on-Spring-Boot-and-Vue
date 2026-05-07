@@ -1,79 +1,138 @@
 <template>
-  <div class="profile">
-    <h2>个人中心</h2>
-    
+  <div class="profile-page">
+    <div class="page-header">
+      <h1>个人中心</h1>
+      <p>管理您的个人信息和账户设置</p>
+    </div>
+
     <div class="profile-container">
       <!-- 个人信息卡片 -->
       <div class="profile-card">
-        <div class="avatar-section">
-          <div class="avatar">
-            <img :src="userInfo.avatar || '/default-avatar.png'" alt="用户头像">
-          </div>
-          <button class="btn-upload">更换头像</button>
+        <div class="card-header-section">
+          <h3>个人信息</h3>
         </div>
         
-        <div class="info-section">
-          <div class="info-group">
-            <label>用户名</label>
-            <input type="text" v-model="userInfo.username" class="form-control">
+        <div class="profile-content">
+          <div class="avatar-section">
+            <div class="avatar">
+              <img :src="userInfo.avatar || '/default-avatar.png'" alt="用户头像">
+            </div>
+            <button class="btn-upload">
+              <el-icon><Camera /></el-icon>
+              更换头像
+            </button>
           </div>
           
-          <div class="info-group">
-            <label>邮箱</label>
-            <input type="email" v-model="userInfo.email" class="form-control">
+          <div class="info-section">
+            <div class="form-group">
+              <label>用户名</label>
+              <el-input v-model="userInfo.username" placeholder="请输入用户名" size="large" />
+            </div>
+            
+            <div class="form-group">
+              <label>邮箱</label>
+              <el-input v-model="userInfo.email" type="email" placeholder="请输入邮箱" size="large" />
+            </div>
+            
+            <div class="form-group">
+              <label>手机号</label>
+              <el-input v-model="userInfo.phone" placeholder="请输入手机号" size="large" />
+            </div>
+            
+            <button class="btn-save" @click="saveProfile">
+              <el-icon><Check /></el-icon>
+              保存修改
+            </button>
           </div>
-          
-          <div class="info-group">
-            <label>手机号</label>
-            <input type="tel" v-model="userInfo.phone" class="form-control">
-          </div>
-          
-          <button class="btn-save" @click="saveProfile">保存修改</button>
         </div>
       </div>
 
       <!-- 修改密码卡片 -->
       <div class="password-card">
-        <h3>修改密码</h3>
+        <div class="card-header-section">
+          <h3>修改密码</h3>
+        </div>
+        
         <div class="password-form">
           <div class="form-group">
             <label>当前密码</label>
-            <input type="password" v-model="passwordForm.oldPassword" class="form-control">
+            <el-input 
+              v-model="passwordForm.oldPassword" 
+              type="password" 
+              placeholder="请输入当前密码"
+              size="large"
+              show-password />
           </div>
           
           <div class="form-group">
             <label>新密码</label>
-            <input type="password" v-model="passwordForm.newPassword" class="form-control">
+            <el-input 
+              v-model="passwordForm.newPassword" 
+              type="password" 
+              placeholder="请输入新密码"
+              size="large"
+              show-password />
           </div>
           
           <div class="form-group">
             <label>确认新密码</label>
-            <input type="password" v-model="passwordForm.confirmPassword" class="form-control">
+            <el-input 
+              v-model="passwordForm.confirmPassword" 
+              type="password" 
+              placeholder="请再次输入新密码"
+              size="large"
+              show-password />
           </div>
           
-          <button class="btn-change-password" @click="changePassword">修改密码</button>
+          <button class="btn-change-password" @click="changePassword">
+            <el-icon><Lock /></el-icon>
+            修改密码
+          </button>
         </div>
       </div>
 
       <!-- 使用统计卡片 -->
       <div class="stats-card">
-        <h3>使用统计</h3>
+        <div class="card-header-section">
+          <h3>使用统计</h3>
+        </div>
+        
         <div class="stats-grid">
           <div class="stat-item">
-            <span class="stat-value">{{ stats.totalHours }}</span>
-            <span class="stat-label">总使用时长</span>
+            <div class="stat-icon blue">
+              <el-icon><Clock /></el-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ stats.totalHours }}</span>
+              <span class="stat-label">总使用时长(小时)</span>
+            </div>
           </div>
           <div class="stat-item">
-            <span class="stat-value">{{ stats.totalReservations }}</span>
-            <span class="stat-label">总预约次数</span>
+            <div class="stat-icon green">
+              <el-icon><Calendar /></el-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ stats.totalReservations }}</span>
+              <span class="stat-label">总预约次数</span>
+            </div>
           </div>
           <div class="stat-item">
-            <span class="stat-value">{{ stats.completedReservations }}</span>
-            <span class="stat-label">已完成预约</span>
+            <div class="stat-icon orange">
+              <el-icon><Check /></el-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ stats.completedReservations }}</span>
+              <span class="stat-label">已完成预约</span>
+            </div>
           </div>
           <div class="stat-item">
-            <span class="stat-value">{{ stats.cancelledReservations }}</span>
-            <span class="stat-label">已取消预约</span>
+            <div class="stat-icon purple">
+              <el-icon><Close /></el-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ stats.cancelledReservations }}</span>
+              <span class="stat-label">已取消预约</span>
+            </div>
           </div>
         </div>
       </div>
@@ -84,6 +143,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Camera, Check, Lock, Clock, Calendar, Close } from '@element-plus/icons-vue'
 import { userApi, usageRecordApi } from '../api'
 import { useRouter } from 'vue-router'
 
@@ -197,54 +257,74 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.profile {
-  padding: var(--spacing-lg);
+.profile-page {
+  padding: 40px;
+  background: #fafafa;
+  min-height: 100vh;
 }
 
-.profile h2 {
-  margin: 0 0 var(--spacing-lg);
-  color: var(--text-primary);
-  font-size: var(--font-size-xl);
-  font-weight: 600;
+.page-header {
+  max-width: 1400px;
+  margin: 0 auto 32px;
+}
+
+.page-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.page-header p {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
 }
 
 .profile-container {
+  max-width: 1400px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
 }
 
 .profile-card, .password-card, .stats-card {
   background: white;
   border-radius: 16px;
-  padding: var(--spacing-lg);
-  box-shadow: var(--card-shadow);
-  transition: var(--transition-base);
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.profile-card:hover, .password-card:hover, .stats-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+.card-header-section {
+  margin-bottom: 24px;
+}
+
+.card-header-section h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 
 .avatar-section {
   text-align: center;
-  margin-bottom: var(--spacing-lg);
 }
 
 .avatar {
   width: 120px;
   height: 120px;
-  margin: 0 auto var(--spacing-md);
+  margin: 0 auto 16px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: var(--transition-base);
-}
-
-.avatar:hover {
-  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .avatar img {
@@ -254,185 +334,156 @@ onMounted(() => {
 }
 
 .btn-upload {
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--primary-color);
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f3f4f6;
+  color: #374151;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: var(--font-size-sm);
+  font-size: 14px;
   font-weight: 500;
-  transition: var(--transition-base);
+  transition: all 0.2s ease;
 }
 
 .btn-upload:hover {
-  background: #2980b9;
-  transform: translateY(-1px);
+  background: #e5e7eb;
 }
 
-.info-group {
-  margin-bottom: var(--spacing-md);
+.info-section, .password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.info-group label {
-  display: block;
-  margin-bottom: var(--spacing-xs);
-  color: var(--text-primary);
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
   font-weight: 500;
-}
-
-.form-control {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: var(--font-size-base);
-  transition: var(--transition-base);
-}
-
-.form-control:focus {
-  border-color: var(--primary-color);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  color: #374151;
 }
 
 .btn-save, .btn-change-password {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
-  padding: var(--spacing-md);
-  background: var(--success-color);
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: var(--font-size-base);
-  font-weight: 500;
-  margin-top: var(--spacing-md);
-  transition: var(--transition-base);
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-save:hover, .btn-change-password:hover {
-  background: #27ae60;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-md);
+  gap: 16px;
 }
 
 .stat-item {
-  text-align: center;
-  padding: var(--spacing-md);
-  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f9fafb;
   border-radius: 12px;
-  transition: var(--transition-base);
+  transition: all 0.2s ease;
 }
 
 .stat-item:hover {
-  background: #e9ecef;
-  transform: translateY(-2px);
+  background: #f3f4f6;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+}
+
+.stat-icon.blue {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.stat-icon.green {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.stat-icon.orange {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.stat-icon.purple {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .stat-value {
-  display: block;
-  font-size: var(--font-size-2xl);
-  font-weight: bold;
-  color: var(--primary-color);
-  margin-bottom: var(--spacing-xs);
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
 }
 
 .stat-label {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
 }
 
-/* 响应式布局 */
-@media screen and (max-width: 768px) {
-  .profile {
-    padding: var(--spacing-md);
-  }
+:deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #e5e7eb;
+  border-radius: 10px;
+  padding: 4px 16px;
+}
 
-  .profile h2 {
-    font-size: var(--font-size-lg);
-    margin-bottom: var(--spacing-md);
-    text-align: center;
-  }
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #3b82f6;
+}
 
+:deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 20px 16px;
+  }
+  
+  .profile-card, .password-card, .stats-card {
+    padding: 20px;
+  }
+  
   .profile-container {
     grid-template-columns: 1fr;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-md);
-  }
-
-  .profile-card, .password-card, .stats-card {
-    padding: var(--spacing-md);
-    border-radius: 12px;
-  }
-
-  .avatar {
-    width: 100px;
-    height: 100px;
-  }
-
-  .form-control {
-    font-size: var(--font-size-sm);
-    padding: 10px;
-  }
-
-  .btn-save, .btn-change-password {
-    padding: 12px;
-    font-size: var(--font-size-sm);
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-sm);
-  }
-
-  .stat-item {
-    padding: var(--spacing-sm);
-  }
-
-  .stat-value {
-    font-size: var(--font-size-xl);
-  }
-
-  .stat-label {
-    font-size: var(--font-size-xs);
-  }
-
-  /* 修复表单在移动端的显示 */
-  .info-group label,
-  .form-group label {
-    font-size: var(--font-size-sm);
-    margin-bottom: 4px;
-  }
-
-  .form-group {
-    margin-bottom: 12px;
-  }
-
-  /* 确保按钮在移动端有足够的点击区域 */
-  .btn-upload,
-  .btn-save,
-  .btn-change-password {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 }
-
-/* 平板设备适配 */
-@media screen and (min-width: 769px) and (max-width: 1024px) {
-  .profile-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .stats-card {
-    grid-column: span 2;
-  }
-}
-</style> 
+</style>

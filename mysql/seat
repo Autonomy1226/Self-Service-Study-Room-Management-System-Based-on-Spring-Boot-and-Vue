@@ -1,9 +1,0 @@
-CREATE TABLE seat (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    room_id BIGINT NOT NULL,
-    seat_number VARCHAR(20) NOT NULL,
-    status VARCHAR(20), -- 状态：可用/已预约/已占用/维修中
-    create_time DATETIME,
-    update_time DATETIME,
-    FOREIGN KEY (room_id) REFERENCES study_room(id)
-);

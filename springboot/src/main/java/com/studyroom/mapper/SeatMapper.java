@@ -16,4 +16,7 @@ public interface SeatMapper extends BaseMapper<Seat> {
     
     // 根据自习室ID和状态查询座位
     List<Seat> selectByRoomIdAndStatus(@Param("roomId") Long roomId, @Param("status") String status);
-} 
+    
+    // 根据自习室ID删除座位
+    int deleteByRoomId(@Param("roomId") Long roomId);
+}

@@ -24,4 +24,12 @@ public class Seat extends BaseEntity {
     @Pattern(regexp = "^(AVAILABLE|UNAVAILABLE)$", 
             message = "状态只能是AVAILABLE或UNAVAILABLE")
     private String status; // AVAILABLE/UNAVAILABLE
+
+    @Min(value = 0, message = "X坐标不能小于0")
+    @Max(value = 100, message = "X坐标不能大于100")
+    private Integer posX; // 0-100, percentage of floor plan width
+
+    @Min(value = 0, message = "Y坐标不能小于0")
+    @Max(value = 100, message = "Y坐标不能大于100")
+    private Integer posY; // 0-100, percentage of floor plan height
 } 

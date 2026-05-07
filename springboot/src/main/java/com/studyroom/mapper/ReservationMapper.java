@@ -23,4 +23,9 @@ public interface ReservationMapper extends BaseMapper<Reservation> {
     
     // 更新预约状态
     int updateStatus(@Param("id") Long id, @Param("status") String status);
-} 
+    
+    // 根据自习室ID统计预约数量
+    int countByRoomId(@Param("roomId") Long roomId, 
+                     @Param("startTime") LocalDateTime startTime,
+                     @Param("endTime") LocalDateTime endTime);
+}

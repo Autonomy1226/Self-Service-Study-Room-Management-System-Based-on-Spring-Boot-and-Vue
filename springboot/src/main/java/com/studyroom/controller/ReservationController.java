@@ -3,6 +3,7 @@ package com.studyroom.controller;
 import com.studyroom.common.Result;
 import com.studyroom.entity.Reservation;
 import com.studyroom.service.ReservationService;
+import com.studyroom.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,9 @@ public class ReservationController {
     
     @Autowired
     private ReservationService reservationService;
+    
+    @Autowired
+    private NotificationService notificationService;
     
     @PostMapping
     public Result<Reservation> create(@RequestBody Reservation reservation) {

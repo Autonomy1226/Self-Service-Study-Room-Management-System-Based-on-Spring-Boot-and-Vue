@@ -32,4 +32,24 @@ public class Reservation extends BaseEntity {
     @Pattern(regexp = "^(PENDING|IN_USE|COMPLETED|CANCELLED)$", 
             message = "状态只能是PENDING、IN_USE、COMPLETED或CANCELLED")
     private String status;
-} 
+    
+    // 新增字段
+    private String reservationType;         // 预约类型: INDIVIDUAL, GROUP
+    private Integer participantCount;       // 参与人数
+    private String specialRequirements;     // 特殊要求
+    private String paymentMethod;            // 支付方式
+    private String paymentStatus;           // 支付状态
+    private LocalDateTime paymentTime;      // 支付时间
+    private LocalDateTime checkInTime;      // 签到时间
+    private LocalDateTime checkOutTime;    // 签退时间
+    private Boolean isAutoRenew;           // 是否自动续约
+    private Integer renewCount;             // 续约次数
+    private String cancelReason;            // 取消原因
+    private Integer cancelPenalty;         // 取消退款金额
+    private String qrCode;                  // 预约二维码
+    private Integer reminderSent;          // 提醒发送次数
+    private LocalDateTime lastReminderTime; // 最后提醒时间
+    private Double rating;                  // 用户评分
+    private String review;                  // 用户评价
+    private LocalDateTime reviewTime;      // 评价时间
+}

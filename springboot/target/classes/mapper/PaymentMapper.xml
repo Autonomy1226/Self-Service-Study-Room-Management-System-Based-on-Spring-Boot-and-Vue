@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.studyroom.mapper.PaymentMapper">
+    
+    <select id="selectByPaymentNo" resultType="com.studyroom.entity.Payment">
+        SELECT * FROM payment WHERE payment_no = #{paymentNo}
+    </select>
+    
+    <select id="selectByUserId" resultType="com.studyroom.entity.Payment">
+        SELECT * FROM payment WHERE user_id = #{userId} ORDER BY create_time DESC
+    </select>
+    
+    <select id="selectByReservationId" resultType="com.studyroom.entity.Payment">
+        SELECT * FROM payment WHERE reservation_id = #{reservationId} ORDER BY create_time DESC
+    </select>
+    
+    <select id="selectByTimeRange" resultType="com.studyroom.entity.Payment">
+        SELECT * FROM payment 
+        WHERE (create_time BETWEEN #{startTime} AND #{endTime})
+           OR (payment_time BETWEEN #{startTime} AND #{endTime})
+        ORDER BY create_time DESC
+    </select>
+    
+    <insert id="insert" parameterType="com.studyroom.entity.Payment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payment (user_id, reservation_id, payment_no, amount, payment_method, status, transaction_id, payment_time, create_time, update_time)
+        VALUES (#{userId}, #{reservationId}, #{paymentNo}, #{amount}, #{paymentMethod}, #{status}, #{transactionId}, #{paymentTime}, #{createTime}, #{updateTime})
+    </insert>
+    
+    <update id="updateById" parameterType="com.studyroom.entity.Payment">
+        UPDATE payment 
+        SET status = #{status}, 
+            transaction_id = #{transactionId}, 
+            payment_time = #{paymentTime},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+    
+    <select id="selectById" resultType="com.studyroom.entity.Payment">
+        SELECT * FROM payment WHERE id = #{id}
+    </select>
+    
+</mapper>

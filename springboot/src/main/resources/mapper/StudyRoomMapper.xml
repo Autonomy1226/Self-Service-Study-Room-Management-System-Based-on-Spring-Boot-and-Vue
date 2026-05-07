@@ -7,12 +7,13 @@
         <result column="capacity" property="capacity"/>
         <result column="status" property="status"/>
         <result column="description" property="description"/>
+        <result column="floor_plan_url" property="floorPlanUrl"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, room_name, capacity, status, description, create_time, update_time
+        id, room_name, capacity, status, description, floor_plan_url, create_time, update_time
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -39,8 +40,8 @@
     </select>
 
     <insert id="insert" parameterType="com.studyroom.entity.StudyRoom" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO study_room (room_name, capacity, status, description, create_time, update_time)
-        VALUES (#{roomName}, #{capacity}, #{status}, #{description}, NOW(), NOW())
+        INSERT INTO study_room (room_name, capacity, status, description, floor_plan_url, create_time, update_time)
+        VALUES (#{roomName}, #{capacity}, #{status}, #{description}, #{floorPlanUrl}, NOW(), NOW())
     </insert>
 
     <update id="update" parameterType="com.studyroom.entity.StudyRoom">
@@ -49,6 +50,7 @@
             capacity = #{capacity},
             status = #{status},
             description = #{description},
+            floor_plan_url = #{floorPlanUrl},
             update_time = NOW()
         WHERE id = #{id}
     </update>

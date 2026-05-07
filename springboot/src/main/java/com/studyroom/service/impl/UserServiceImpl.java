@@ -39,8 +39,8 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserMapper> implement
             throw new RuntimeException("用户名已存在");
         }
         
-        // 加密密码
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        // 密码不加密，明文存储
+        // user.setPassword(passwordEncoder.encode(user.getPassword()));
         
         // 设置默认角色
         if (user.getRole() == null) {
@@ -57,7 +57,8 @@ public class UserServiceImpl extends BaseServiceImpl<User, UserMapper> implement
             throw new RuntimeException("用户不存在");
         }
         
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        // 明文密码比较
+        if (!password.equals(user.getPassword())) {
             throw new RuntimeException("密码错误");
         }
         

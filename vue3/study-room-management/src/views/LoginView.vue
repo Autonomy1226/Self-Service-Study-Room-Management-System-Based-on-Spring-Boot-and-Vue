@@ -1,32 +1,38 @@
 <template>
-  <div class="login">
-    <el-card class="login-container">
-      <template #header>
-        <h2>登录</h2>
-      </template>
+  <div class="login-page">
+    <div class="login-container">
+      <div class="login-header">
+        <div class="logo">
+          <el-icon><Reading /></el-icon>
+        </div>
+        <h1>自习室预约系统</h1>
+        <p>欢迎回来，请登录您的账号</p>
+      </div>
       
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
-        label-position="top"
+        class="login-form"
         @submit.prevent="handleLogin"
       >
-        <el-form-item label="用户名" prop="username">
+        <el-form-item prop="username">
           <el-input
             v-model="form.username"
             placeholder="请输入用户名"
             :prefix-icon="User"
+            size="large"
           />
         </el-form-item>
         
-        <el-form-item label="密码" prop="password">
+        <el-form-item prop="password">
           <el-input
             v-model="form.password"
             type="password"
             placeholder="请输入密码"
             show-password
             :prefix-icon="Lock"
+            size="large"
           />
         </el-form-item>
         
@@ -35,19 +41,21 @@
             type="primary"
             native-type="submit"
             :loading="loading"
-            class="submit-btn"
+            class="login-btn"
+            size="large"
           >
             登录
           </el-button>
         </el-form-item>
-        
-        <div class="form-footer">
-          <router-link to="/register">
-            <el-button link>注册账号</el-button>
-          </router-link>
-        </div>
       </el-form>
-    </el-card>
+      
+      <div class="login-footer">
+        <span>还没有账号？</span>
+        <router-link to="/register" class="register-link">
+          立即注册
+        </router-link>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -55,7 +63,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Reading } from '@element-plus/icons-vue'
 import { userApi } from '../api'
 
 const router = useRouter()
@@ -119,8 +127,9 @@ const handleLogin = async () => {
       
       ElMessage.success('登录成功')
       
-      // 使用 replace 而不是 push，防止用户点击返回按钮时回到登录页
-      router.replace('/')
+      // 管理员进入后台主界面，普通用户进入首页
+      const role = String(userInfo.role || '').toUpperCase()
+      router.replace(['ADMIN', 'ROLE_ADMIN', '1'].includes(role) ? '/dashboard' : '/')
     } else {
       throw new Error('登录响应数据格式错误')
     }
@@ -143,112 +152,149 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login {
+.login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-  padding: var(--spacing-md);
+  background: #ffffff;
+  padding: 20px;
 }
 
 .login-container {
   width: 100%;
-  max-width: 400px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: var(--card-shadow);
-  transition: var(--transition-base);
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 40px 36px;
+  border: none;
+  box-shadow: none;
 }
 
-.login-container:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.login-container :deep(.el-card__header) {
+.login-header {
   text-align: center;
-  padding: var(--spacing-lg);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 40px;
 }
 
-.login-container h2 {
+.logo {
+  width: 64px;
+  height: 64px;
+  background: #eff6ff;
+  border-radius: 12px;
+  border: 1px solid #dbeafe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.logo .el-icon {
+  font-size: 32px;
+  color: #2563eb;
+}
+
+.login-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.login-header p {
+  font-size: 15px;
+  color: #6b7280;
   margin: 0;
-  color: var(--text-primary);
-  font-size: var(--font-size-xl);
-  font-weight: 600;
 }
 
-.login-container :deep(.el-form) {
-  padding: var(--spacing-lg);
+.login-form :deep(.el-form-item) {
+  margin-bottom: 20px;
 }
 
-.login-container :deep(.el-form-item__label) {
-  font-weight: 500;
-  color: var(--text-primary);
-  padding-bottom: var(--spacing-xs);
+.login-form :deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #e5e7eb;
+  border-radius: 12px;
+  padding: 4px 16px;
+  transition: all 0.2s ease;
 }
 
-.login-container :deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px #dcdfe6;
-  transition: var(--transition-base);
+.login-form :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #3b82f6;
 }
 
-.login-container :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--primary-color);
+.login-form :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px #3b82f6;
 }
 
-.login-container :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--primary-color);
+.login-form :deep(.el-input__inner) {
+  height: 48px;
+  font-size: 15px;
 }
 
-.submit-btn {
+.login-form :deep(.el-input__prefix) {
+  color: #9ca3af;
+}
+
+.login-btn {
   width: 100%;
-  height: 44px;
-  font-size: var(--font-size-base);
-  font-weight: 500;
-  margin-top: var(--spacing-md);
+  height: 52px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  transition: all 0.2s ease;
 }
 
-.form-footer {
+.login-btn:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.login-footer {
   text-align: center;
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #f3f4f6;
 }
 
-/* 响应式布局 */
-@media screen and (max-width: 768px) {
-  .login {
-    padding: var(--spacing-sm);
-  }
-
-  .login-container {
-    max-width: 100%;
-  }
-
-  .login-container :deep(.el-card__header) {
-    padding: var(--spacing-md);
-  }
-
-  .login-container h2 {
-    font-size: var(--font-size-lg);
-  }
-
-  .login-container :deep(.el-form) {
-    padding: var(--spacing-md);
-  }
-
-  .submit-btn {
-    height: 40px;
-    font-size: var(--font-size-sm);
-  }
+.login-footer span {
+  color: #6b7280;
+  font-size: 14px;
 }
 
-/* 平板设备适配 */
-@media screen and (min-width: 769px) and (max-width: 1024px) {
+.register-link {
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: color 0.2s ease;
+}
+
+.register-link:hover {
+  color: #1d4ed8;
+}
+
+/* 响应式 */
+@media screen and (max-width: 480px) {
   .login-container {
-    max-width: 360px;
+    padding: 40px 24px;
+    border-radius: 16px;
+  }
+  
+  .login-header h1 {
+    font-size: 24px;
+  }
+  
+  .logo {
+    width: 64px;
+    height: 64px;
+  }
+  
+  .logo .el-icon {
+    font-size: 30px;
   }
 }
 </style>

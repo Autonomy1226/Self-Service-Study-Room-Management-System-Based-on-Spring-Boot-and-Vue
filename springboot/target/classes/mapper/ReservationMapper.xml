@@ -33,7 +33,6 @@
         SELECT <include refid="Base_Column_List"/>
         FROM reservation
         WHERE seat_id = #{seatId}
-        AND status = 'PENDING'
     </select>
 
     <select id="selectByStatus" resultMap="BaseResultMap">
@@ -82,4 +81,14 @@
     <delete id="deleteById">
         DELETE FROM reservation WHERE id = #{id}
     </delete>
-</mapper> 
+
+    <select id="countByRoomId" resultType="int">
+        SELECT COUNT(r.id)
+        FROM reservation r
+        INNER JOIN seat s ON r.seat_id = s.id
+        WHERE s.room_id = #{roomId}
+        AND ((r.start_time BETWEEN #{startTime} AND #{endTime})
+           OR (r.end_time BETWEEN #{startTime} AND #{endTime})
+           OR (r.start_time &lt;= #{startTime} AND r.end_time &gt;= #{endTime}))
+    </select>
+</mapper>

@@ -28,11 +28,28 @@ jwt:
 
 # 跨域配置
 cors:
-  allowed-origins: "*"  # 允许所有来源
+  allowed-origins: "http://localhost:5173"  # 允许所有来源
   allowed-methods: "*"  # 允许所有方法
   allowed-headers: "*"  # 允许所有头信息
   allow-credentials: true
   max-age: 3600
+
+# 支付配置
+payment:
+  alipay:
+    app-id: "your-alipay-app-id"
+    private-key: "your-alipay-private-key"
+    public-key: "your-alipay-public-key"
+    gateway: "https://openapi.alipay.com/gateway.do"
+    notify-url: "http://localhost:8080/api/third-party-payment/callback/alipay"
+    return-url: "http://localhost:5173/payment/success"
+  wechat:
+    app-id: "your-wechat-app-id"
+    mch-id: "your-wechat-mch-id"
+    api-key: "your-wechat-api-key"
+    cert-path: "path/to/wechat/cert.p12"
+    notify-url: "http://localhost:8080/api/third-party-payment/callback/wechat"
+    return-url: "http://localhost:5173/payment/success"
 
 # 日志配置
 logging:

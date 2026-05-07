@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.studyroom.mapper.ReviewMapper">
+    <resultMap id="BaseResultMap" type="com.studyroom.entity.Review">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="seat_id" property="seatId"/>
+        <result column="reservation_id" property="reservationId"/>
+        <result column="rating" property="rating"/>
+        <result column="content" property="content"/>
+        <result column="tags" property="tags"/>
+        <result column="is_anonymous" property="isAnonymous"/>
+        <result column="status" property="status"/>
+        <result column="helpful_count" property="helpfulCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, seat_id, reservation_id, rating, content, tags, is_anonymous, status, helpful_count, create_time, update_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM review
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectBySeatId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM review
+        WHERE seat_id = #{seatId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM review
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectApprovedBySeatId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM review
+        WHERE seat_id = #{seatId} AND status = 'APPROVED'
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectAverageRatingBySeatId" resultType="Double">
+        SELECT AVG(rating)
+        FROM review
+        WHERE seat_id = #{seatId} AND status = 'APPROVED'
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM review
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.studyroom.entity.Review" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO review (user_id, seat_id, reservation_id, rating, content, tags, is_anonymous, status, helpful_count, create_time, update_time)
+        VALUES (#{userId}, #{seatId}, #{reservationId}, #{rating}, #{content}, #{tags}, #{isAnonymous}, #{status}, #{helpfulCount}, NOW(), NOW())
+    </insert>
+
+    <update id="update" parameterType="com.studyroom.entity.Review">
+        UPDATE review
+        SET user_id = #{userId},
+            seat_id = #{seatId},
+            reservation_id = #{reservationId},
+            rating = #{rating},
+            content = #{content},
+            tags = #{tags},
+            is_anonymous = #{isAnonymous},
+            status = #{status},
+            helpful_count = #{helpfulCount},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM review WHERE id = #{id}
+    </delete>
+</mapper>

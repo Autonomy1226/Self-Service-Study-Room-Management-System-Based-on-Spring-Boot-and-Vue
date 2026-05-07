@@ -1,9 +1,0 @@
-CREATE TABLE study_room (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    room_name VARCHAR(50) NOT NULL,
-    capacity INT NOT NULL, -- 容纳人数
-    status VARCHAR(20), -- 状态：开放/关闭/维护中
-    description TEXT,
-    create_time DATETIME,
-    update_time DATETIME
-);

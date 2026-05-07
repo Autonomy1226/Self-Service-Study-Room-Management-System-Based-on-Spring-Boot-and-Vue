@@ -7,12 +7,14 @@
         <result column="seat_number" property="seatNumber"/>
         <result column="price" property="price"/>
         <result column="status" property="status"/>
+        <result column="pos_x" property="posX"/>
+        <result column="pos_y" property="posY"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, room_id, seat_number, price, status, create_time, update_time
+        id, room_id, seat_number, price, status, pos_x, pos_y, create_time, update_time
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -45,8 +47,8 @@
     </select>
 
     <insert id="insert" parameterType="com.studyroom.entity.Seat" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO seat (room_id, seat_number, price, status, create_time, update_time)
-        VALUES (#{roomId}, #{seatNumber}, #{price}, #{status}, NOW(), NOW())
+        INSERT INTO seat (room_id, seat_number, price, status, pos_x, pos_y, create_time, update_time)
+        VALUES (#{roomId}, #{seatNumber}, #{price}, #{status}, #{posX}, #{posY}, NOW(), NOW())
     </insert>
 
     <update id="update" parameterType="com.studyroom.entity.Seat">
@@ -55,6 +57,8 @@
             seat_number = #{seatNumber},
             price = #{price},
             status = #{status},
+            pos_x = #{posX},
+            pos_y = #{posY},
             update_time = NOW()
         WHERE id = #{id}
     </update>
@@ -69,4 +73,8 @@
     <delete id="deleteById">
         DELETE FROM seat WHERE id = #{id}
     </delete>
-</mapper> 
+
+    <delete id="deleteByRoomId">
+        DELETE FROM seat WHERE room_id = #{roomId}
+    </delete>
+</mapper>

@@ -166,10 +166,133 @@ export const usageRecordApi = {
   deleteUsageRecord: (id) => api.delete(`/api/usage-records/${id}`)
 }
 
+// 公告相关API
+export const announcementApi = {
+  // 获取有效公告
+  getActiveAnnouncements: () => api.get('/api/announcements/active'),
+  // 获取所有公告（管理员）
+  getAllAnnouncements: () => api.get('/api/announcements'),
+  getAnnouncementById: (id) => api.get(`/api/announcements/${id}`),
+  // 创建公告（管理员）
+  createAnnouncement: (data) => api.post('/api/announcements', data),
+  // 更新公告（管理员）
+  updateAnnouncement: (id, data) => api.put(`/api/announcements/${id}`, data),
+  // 删除公告（管理员）
+  deleteAnnouncement: (id) => api.delete(`/api/announcements/${id}`)
+}
+
+// 通知相关API
+export const notificationApi = {
+  // 获取用户通知
+  getUserNotifications: (userId) => api.get(`/api/notifications/user/${userId}`),
+  // 获取未读通知
+  getUnreadNotifications: (userId) => api.get(`/api/notifications/user/${userId}/unread`),
+  // 获取未读数量
+  getUnreadCount: (userId) => api.get(`/api/notifications/user/${userId}/unread-count`),
+  // 创建通知
+  createNotification: (data) => api.post('/api/notifications', data),
+  // 标记已读
+  markAsRead: (id) => api.put(`/api/notifications/${id}/read`),
+  // 标记全部已读
+  markAllAsRead: (userId) => api.put(`/api/notifications/user/${userId}/read-all`),
+  // 删除通知
+  deleteNotification: (id) => api.delete(`/api/notifications/${id}`)
+}
+
+// 评价相关API
+export const reviewApi = {
+  // 获取座位评价
+  getSeatReviews: (seatId) => api.get(`/api/reviews/seat/${seatId}`),
+  // 获取用户评价
+  getUserReviews: (userId) => api.get(`/api/reviews/user/${userId}`),
+  getReviewById: (id) => api.get(`/api/reviews/${id}`),
+  // 创建评价
+  createReview: (data) => api.post('/api/reviews', data),
+  // 更新评价
+  updateReview: (id, data) => api.put(`/api/reviews/${id}`, data),
+  // 删除评价
+  deleteReview: (id) => api.delete(`/api/reviews/${id}`),
+  // 获取座位平均评分
+  getSeatAverageRating: (seatId) => api.get(`/api/reviews/seat/${seatId}/average`),
+  // 获取座位评分统计
+}
+
+// 支付相关API
+export const paymentApi = {
+  // 获取用户余额
+  getUserBalance: (userId) => api.get(`/api/payment/balance/${userId}`),
+  // 充值
+  recharge: (userId, amount, paymentMethod) => api.post('/api/payment/recharge', { userId, amount, paymentMethod }),
+  // 获取用户支付记录
+  getUserPayments: (userId) => api.get(`/api/payment/records/${userId}`),
+  // 获取用户充值记录
+  getRechargeRecords: (userId) => api.get(`/api/payment/recharge-records/${userId}`),
+  // 创建支付订单
+  createPayment: (userId, reservationId, amount, paymentMethod) => api.post('/api/payment/create', { userId, reservationId, amount, paymentMethod }),
+  // 余额支付
+  balancePayment: (userId, reservationId, amount) => api.post('/api/payment/balance-pay', { userId, reservationId, amount }),
+  // 第三方支付
+  createThirdPartyPayment: (paymentMethod, orderId, amount, subject, description) => 
+    api.post(`/api/third-party-payment/create/${paymentMethod}`, null, {
+      params: { orderId, amount, subject, description }
+    }),
+  queryThirdPartyPayment: (paymentMethod, orderId) => 
+    api.get(`/api/third-party-payment/query/${paymentMethod}`, {
+      params: { orderId }
+    })
+}
+
+// 数据可视化仪表盘API
+export const dashboardApi = {
+  // 获取预约统计
+  getReservationStats: (startTime, endTime) => api.get('/api/dashboard/reservation-stats', {
+    params: { startTime, endTime }
+  }),
+  // 获取自习室使用率
+  getRoomUsageStats: () => api.get('/api/dashboard/room-usage'),
+  // 获取每日预约趋势
+  getDailyReservationTrend: (startDate, endDate) => api.get('/api/dashboard/daily-trend', {
+    params: { startDate, endDate }
+  }),
+  // 获取座位热度排行
+  getSeatPopularityRanking: (limit = 10) => api.get('/api/dashboard/seat-popularity', {
+    params: { limit }
+  }),
+  // 获取用户活跃度统计
+  getUserActivityStats: () => api.get('/api/dashboard/user-activity'),
+  // 获取每日用户统计
+  getDailyUserStats: (startDate, endDate) => api.get('/api/dashboard/daily-user-stats', {
+    params: { startDate, endDate }
+  }),
+  // 获取小时统计数据
+  getHourlyStats: (startTime, endTime) => api.get('/api/dashboard/hourly-stats', {
+    params: { startTime, endTime }
+  }),
+  // 获取收入统计
+  getRevenueStats: (startDate, endDate) => api.get('/api/dashboard/revenue-stats', {
+    params: { startDate, endDate }
+  }),
+  // 获取每日收入趋势
+  getDailyRevenue: (startDate, endDate) => api.get('/api/dashboard/daily-revenue', {
+    params: { startDate, endDate }
+  }),
+  // 获取支付方式统计
+  getPaymentMethodStats: (startDate, endDate) => api.get('/api/dashboard/payment-method-stats', {
+    params: { startDate, endDate }
+  }),
+  // 获取系统概览
+  getSystemOverview: () => api.get('/api/dashboard/overview')
+}
+
 export default {
   userApi,
   studyRoomApi,
   seatApi,
   reservationApi,
-  usageRecordApi
-} 
+  usageRecordApi,
+  announcementApi,
+  notificationApi,
+  reviewApi,
+  paymentApi,
+  dashboardApi
+}

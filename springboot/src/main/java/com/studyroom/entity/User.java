@@ -3,6 +3,7 @@ package com.studyroom.entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import javax.validation.constraints.*;
+import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -29,4 +30,18 @@ public class User extends BaseEntity {
     @NotBlank(message = "角色不能为空")
     @Pattern(regexp = "^(ADMIN|USER)$", message = "角色只能是ADMIN或USER")
     private String role;
-} 
+    
+    // 新增字段
+    private String avatar;                  // 头像URL
+    private String status;                  // 用户状态: ACTIVE, INACTIVE, BANNED
+    private Integer creditScore;            // 信用分数
+    private String memberLevel;             // 会员等级
+    private LocalDateTime memberExpireTime; // 会员到期时间
+    private LocalDateTime lastLoginTime;    // 最后登录时间
+    private String lastLoginIp;             // 最后登录IP
+    private Boolean emailVerified;          // 邮箱是否验证
+    private Boolean phoneVerified;          // 手机是否验证
+    private LocalDateTime registerTime;     // 注册时间
+    private String invitationCode;          // 邀请码
+    private Long inviterId;                 // 邀请人ID
+}

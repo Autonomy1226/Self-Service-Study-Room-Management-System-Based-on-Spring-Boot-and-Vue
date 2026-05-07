@@ -1,21 +1,22 @@
 <template>
-  <div class="reservations">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h2>预约座位</h2>
-        </div>
-      </template>
+  <div class="reservations-page">
+    <div class="page-header">
+      <h1>预约座位</h1>
+      <p>选择自习室、日期和座位进行预约</p>
+    </div>
 
-      <!-- 预约表单 -->
+    <div class="content-card">
+      <h3 class="section-title">预约信息</h3>
+      
       <el-form :model="form" label-width="100px" class="reservation-form">
-        <el-row :gutter="20">
-          <el-col :span="8">
+        <el-row :gutter="24">
+          <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="自习室">
               <el-select 
                 v-model="form.roomId" 
                 placeholder="选择自习室"
-                @change="handleRoomChange">
+                @change="handleRoomChange"
+                size="large">
                 <el-option
                   v-for="room in rooms"
                   :key="room.id"
@@ -26,7 +27,7 @@
             </el-form-item>
           </el-col>
           
-          <el-col :span="8">
+          <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="日期">
               <el-date-picker
                 v-model="form.date"
@@ -35,13 +36,14 @@
                 :disabled-date="disabledDate"
                 value-format="YYYY-MM-DD"
                 @change="handleDateChange"
+                size="large"
               />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="8">
+        <el-row :gutter="24">
+          <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="开始时间">
               <el-time-picker
                 v-model="form.startTime"
@@ -50,11 +52,12 @@
                 :disabled-hours="disabledHours"
                 :disabled-minutes="disabledMinutes"
                 @change="handleTimeChange"
+                size="large"
               />
             </el-form-item>
           </el-col>
           
-          <el-col :span="8">
+          <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="结束时间">
               <el-time-picker
                 v-model="form.endTime"
@@ -63,6 +66,7 @@
                 :disabled-hours="disabledEndHours"
                 :disabled-minutes="disabledEndMinutes"
                 @change="handleTimeChange"
+                size="large"
               />
             </el-form-item>
           </el-col>
@@ -70,9 +74,34 @@
 
         <!-- 座位选择区域 -->
         <div v-if="form.roomId && form.date && form.startTime && form.endTime" class="seat-selection">
-          <h3>选择座位</h3>
-          <div class="seat-grid">
-            <el-card
+          <h4 class="subsection-title">选择座位</h4>
+          <div v-if="floorPlanUrl && seatsHavePos" class="floorplan-wrapper">
+            <div class="floorplan-stage">
+              <img class="floorplan-image" :src="floorPlanUrl" alt="自习室平面图" />
+              <button
+                v-for="seat in availableSeats"
+                :key="seat.id"
+                class="seat-pin"
+                :class="{
+                  selected: selectedSeat?.id === seat.id,
+                  reserved: seat.status === 'reserved'
+                }"
+                :style="seatPinStyle(seat)"
+                @click="selectSeat(seat)"
+                :disabled="seat.status === 'reserved'"
+                type="button"
+              >
+                {{ seat.number }}
+              </button>
+            </div>
+            <div class="floorplan-legend">
+              <div class="legend-item"><span class="dot available" /> 可用</div>
+              <div class="legend-item"><span class="dot reserved" /> 已被预约</div>
+              <div class="legend-item"><span class="dot selected" /> 已选择</div>
+            </div>
+          </div>
+          <div v-else class="seat-grid">
+            <div
               v-for="seat in availableSeats"
               :key="seat.id"
               :class="['seat-card', { 
@@ -83,62 +112,123 @@
             >
               <div class="seat-number">{{ seat.number }}</div>
               <div class="seat-status">
-                <el-tag :type="getSeatStatusType(seat.status)">
+                <el-tag :type="getSeatStatusType(seat.status)" size="small" effect="light">
                   {{ seat.statusText }}
                 </el-tag>
               </div>
-              <div v-if="seat.reservationTimes && seat.reservationTimes.length > 0" class="reservation-times">
-                <div v-for="(time, index) in seat.reservationTimes" :key="index" class="time-slot">
-                  {{ time.start }} - {{ time.end }}
-                </div>
-              </div>
-            </el-card>
+            </div>
           </div>
         </div>
 
         <!-- 预约信息确认 -->
         <div v-if="selectedSeat" class="reservation-summary">
-          <h3>预约信息确认</h3>
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="自习室">
-              {{ selectedRoom?.name }}
-            </el-descriptions-item>
-            <el-descriptions-item label="座位号">
-              {{ selectedSeat.number }}
-            </el-descriptions-item>
-            <el-descriptions-item label="使用日期">
-              {{ form.date }}
-            </el-descriptions-item>
-            <el-descriptions-item label="使用时间">
-              {{ formatTime(form.startTime) }} - {{ formatTime(form.endTime) }}
-            </el-descriptions-item>
-            <el-descriptions-item label="使用时长">
-              {{ duration }}分钟
-            </el-descriptions-item>
-            <el-descriptions-item label="费用">
-              <span class="price">¥{{ calculatePrice() }}</span>
-            </el-descriptions-item>
-          </el-descriptions>
-
-          <div class="form-actions">
-            <el-button type="primary" @click="submitReservation" :loading="loading">
-              确认预约
-            </el-button>
+          <h4 class="subsection-title">预约确认</h4>
+          <div class="summary-content">
+            <div class="summary-item">
+              <span class="label">自习室：</span>
+              <span class="value">{{ selectedRoom?.name }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">座位：</span>
+              <span class="value">{{ selectedSeat.number }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">日期：</span>
+              <span class="value">{{ form.date }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">时间：</span>
+              <span class="value">{{ formatTime(form.startTime) }} - {{ formatTime(form.endTime) }}</span>
+            </div>
           </div>
+          <el-button 
+            type="primary" 
+            size="large"
+            class="submit-btn"
+            @click="handleSubmit"
+            :loading="submitting">
+            <el-icon><Check /></el-icon>
+            确认预约
+          </el-button>
         </div>
       </el-form>
-    </el-card>
+    </div>
+
+    <!-- 支付对话框 -->
+    <el-dialog v-model="showPaymentDialog" title="确认支付" width="400px" :close-on-click-modal="false">
+      <div class="payment-info">
+        <h4>预约信息</h4>
+        <div class="info-item">
+          <span>座位编号：</span>
+          <span>{{ paymentInfo.seatNumber }}</span>
+        </div>
+        <div class="info-item">
+          <span>预约时间：</span>
+          <span>{{ formatTime(paymentInfo.startTime) }} - {{ formatTime(paymentInfo.endTime) }}</span>
+        </div>
+        <div class="info-item">
+          <span>预约时长：</span>
+          <span>{{ calculateDuration(paymentInfo.startTime, paymentInfo.endTime) }} 分钟</span>
+        </div>
+        <div class="info-item total">
+          <span>应付金额：</span>
+          <span class="amount">¥{{ calculatePrice() }}</span>
+        </div>
+      </div>
+      
+      <el-form label-width="80px" style="margin-top: 20px;">
+        <el-form-item label="支付方式">
+          <el-radio-group v-model="paymentMethod">
+            <el-radio value="BALANCE">
+              余额支付 (当前余额: ¥{{ userBalance }})
+            </el-radio>
+            <el-radio value="ALIPAY">支付宝</el-radio>
+            <el-radio value="WECHAT">微信支付</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="cancelPayment">取消</el-button>
+        <el-button type="primary" @click="handlePayment" :loading="paying">
+          确认支付
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Check } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
-import { reservationApi, studyRoomApi, seatApi } from '../api'
+import { reservationApi, studyRoomApi, seatApi, paymentApi } from '../api'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const loading = ref(false)
+const submitting = ref(false)
+const rooms = ref([])
+const availableSeats = ref([])
+const selectedSeat = ref(null)
+const floorPlanUrl = ref('')
+
+// 支付相关
+const showPaymentDialog = ref(false)
+const currentReservation = ref(null)
+const userBalance = ref(0)
+const paymentMethod = ref('BALANCE')
+const paying = ref(false)
+
+// 保存预约信息用于支付对话框
+const paymentInfo = ref({
+  seatNumber: '',
+  startTime: null,
+  endTime: null,
+  date: ''
+})
+
 const form = ref({
   roomId: '',
   date: '',
@@ -146,103 +236,76 @@ const form = ref({
   endTime: null
 })
 
-const loading = ref(false)
-const selectedSeat = ref(null)
-
-const rooms = ref([
-  { id: 1, name: '第一自习室', pricePerHour: 5 },
-  { id: 2, name: '第二自习室', pricePerHour: 6 }
-])
-
-const availableSeats = ref([])
-
 const selectedRoom = computed(() => {
   return rooms.value.find(room => room.id === form.value.roomId)
 })
 
-const duration = computed(() => {
-  if (!form.value.startTime || !form.value.endTime) return 0
-  const start = dayjs(form.value.startTime)
-  const end = dayjs(form.value.endTime)
-  return end.diff(start, 'minute')
+const seatsHavePos = computed(() => {
+  return availableSeats.value.some(s => Number.isFinite(s.posX) && Number.isFinite(s.posY))
 })
 
-// 禁用过去的日期
-const disabledDate = (time) => {
-  return time.getTime() < Date.now() - 8.64e7
+const disabledDate = (date) => {
+  return date < new Date(new Date().setHours(0, 0, 0, 0))
 }
 
-// 禁用非营业时间
 const disabledHours = () => {
-  const now = dayjs()
-  const currentHour = now.hour()
-  const currentMinute = now.minute()
-  
-  // 如果是今天，禁用当前时间之前的小时
-  if (form.value.date === now.format('YYYY-MM-DD')) {
-    return Array.from({ length: 24 }, (_, i) => i).filter(h => 
-      h < currentHour || h < 8 || h > 22
-    )
-  }
-  
-  // 其他日期只禁用非营业时间
-  return Array.from({ length: 24 }, (_, i) => i).filter(h => h < 8 || h > 22)
+  return [0, 1, 2, 3, 4, 5, 6, 22, 23]
 }
 
-const disabledMinutes = (hour) => {
-  const now = dayjs()
-  const currentHour = now.hour()
-  const currentMinute = now.minute()
-  
-  // 如果是今天且是当前小时，禁用当前时间之前的分钟
-  if (form.value.date === now.format('YYYY-MM-DD') && hour === currentHour) {
-    return Array.from({ length: 60 }, (_, i) => i).filter(m => m < currentMinute)
-  }
-  
-  // 其他时间段全部可选
+const disabledMinutes = () => {
   return []
 }
 
 const disabledEndHours = () => {
-  if (!form.value.startTime) return []
-  const start = dayjs(form.value.startTime)
-  const startHour = start.hour()
-  
-  // 如果是今天，需要考虑当前时间
-  const now = dayjs()
-  if (form.value.date === now.format('YYYY-MM-DD')) {
-    const currentHour = now.hour()
-    return Array.from({ length: 24 }, (_, i) => i).filter(h => 
-      h < startHour || h > 22 || (h === currentHour && now.minute() >= 55)
-    )
+  if (!form.value.startTime) return [0, 1, 2, 3, 4, 5, 6, 22, 23]
+  const startHour = form.value.startTime.getHours()
+  const hours = []
+  for (let i = 0; i <= startHour; i++) {
+    hours.push(i)
   }
-  
-  return Array.from({ length: 24 }, (_, i) => i).filter(h => h < startHour || h > 22)
+  hours.push(23)
+  return hours
 }
 
 const disabledEndMinutes = (hour) => {
   if (!form.value.startTime) return []
-  const start = dayjs(form.value.startTime)
-  const startHour = start.hour()
-  const startMinute = start.minute()
+  const startHour = form.value.startTime.getHours()
+  const startMinute = form.value.startTime.getMinutes()
   
   if (hour === startHour) {
-    // 确保结束时间至少比开始时间晚30分钟
-    return Array.from({ length: 60 }, (_, i) => i).filter(m => 
-      m <= startMinute || m < startMinute + 30
-    )
+    const minutes = []
+    for (let i = 0; i <= startMinute; i++) {
+      minutes.push(i)
+    }
+    return minutes
   }
   return []
 }
 
-// 获取当前用户信息
-const currentUser = computed(() => {
-  return JSON.parse(localStorage.getItem('userInfo') || 'null')
-})
+const getSeatStatusType = (status) => {
+  const types = {
+    'available': 'success',
+    'reserved': 'danger',
+    'maintenance': 'warning'
+  }
+  return types[status] || 'info'
+}
 
-// 检查登录状态
+const formatTime = (time) => {
+  if (!time) return ''
+  return dayjs(time).format('HH:mm')
+}
+
+const calculateDuration = (startTime, endTime) => {
+  if (!startTime || !endTime) return 0
+  const start = dayjs(`2000-01-01T${formatTime(startTime)}:00`)
+  const end = dayjs(`2000-01-01T${formatTime(endTime)}:00`)
+  return end.diff(start, 'minute')
+}
+
 const checkLoginStatus = () => {
-  if (!currentUser.value) {
+  const userInfo = localStorage.getItem('userInfo')
+  if (!userInfo) {
     ElMessage.warning('请先登录')
     router.push('/login')
     return false
@@ -250,109 +313,33 @@ const checkLoginStatus = () => {
   return true
 }
 
-// 获取自习室列表
 const fetchRooms = async () => {
   try {
     const data = await studyRoomApi.getAllRooms()
-    rooms.value = data.map(room => ({
-      id: room.id,
-      name: room.roomName,
-      pricePerHour: room.pricePerHour || 5
-    }))
+    rooms.value = data.filter(room => room.status === 'OPEN')
   } catch (error) {
     console.error('获取自习室列表失败:', error)
     ElMessage.error('获取自习室列表失败')
   }
 }
 
-// 获取可用座位
-const fetchAvailableSeats = async () => {
-  if (!form.value.roomId || !form.value.date || !form.value.startTime || !form.value.endTime) {
-    availableSeats.value = []
-    return
-  }
-  
-  try {
-    // 获取该自习室的所有座位
-    const allSeats = await seatApi.getSeatsByRoom(form.value.roomId)
-    console.log('获取到的座位列表:', allSeats)
-    
-    // 获取该日期已预约的座位
-    const startTime = `${form.value.date}T${formatTime(form.value.startTime)}:00`
-    const endTime = `${form.value.date}T${formatTime(form.value.endTime)}:00`
-    const reservations = await reservationApi.getReservationsByTimeRange(startTime, endTime)
-    console.log('获取到的预约记录:', reservations)
-    
-    // 处理座位状态
-    availableSeats.value = allSeats.map(seat => {
-      // 首先检查座位的原始状态
-      if (seat.status === 'UNAVAILABLE') {
-        return {
-          id: seat.id,
-          number: seat.seatNumber,
-          status: 'unavailable',
-          statusText: '不可用',
-          reservationTimes: [],
-          originalStatus: seat.status
-        }
-      }
-
-      // 获取该座位的所有预约记录
-      const seatReservations = reservations.filter(reservation => 
-        reservation.seatId === seat.id && reservation.status === 'PENDING'
-      )
-      console.log(`座位 ${seat.seatNumber} 的预约记录:`, seatReservations)
-      
-      // 检查是否有时间冲突
-      const hasConflict = seatReservations.some(reservation => {
-        const reservationStart = dayjs(reservation.startTime)
-        const reservationEnd = dayjs(reservation.endTime)
-        const selectedStart = dayjs(startTime)
-        const selectedEnd = dayjs(endTime)
-        
-        // 检查时间是否重叠
-        const isOverlapping = (
-          (selectedStart.isAfter(reservationStart) && selectedStart.isBefore(reservationEnd)) ||
-          (selectedEnd.isAfter(reservationStart) && selectedEnd.isBefore(reservationEnd)) ||
-          (selectedStart.isBefore(reservationStart) && selectedEnd.isAfter(reservationEnd)) ||
-          (selectedStart.isSame(reservationStart)) ||
-          (selectedEnd.isSame(reservationEnd)) ||
-          (selectedStart.isAfter(reservationStart) && selectedEnd.isBefore(reservationEnd))
-        )
-        
-        console.log(`检查座位 ${seat.seatNumber} 的时间冲突:`, {
-          reservationTime: `${reservationStart.format('HH:mm')} - ${reservationEnd.format('HH:mm')}`,
-          selectedTime: `${selectedStart.format('HH:mm')} - ${selectedEnd.format('HH:mm')}`,
-          isOverlapping
-        })
-        
-        return isOverlapping
-      })
-      
-      // 获取该座位的所有预约时间段，只显示PENDING状态的预约
-      const reservationTimes = seatReservations.map(reservation => ({
-        start: dayjs(reservation.startTime).format('HH:mm'),
-        end: dayjs(reservation.endTime).format('HH:mm')
-      }))
-      
-      return {
-        id: seat.id,
-        number: seat.seatNumber,
-        status: hasConflict ? 'reserved' : 'available',
-        statusText: hasConflict ? '已被预约' : '可用',
-        reservationTimes: reservationTimes,
-        originalStatus: seat.status
-      }
-    })
-    
-    console.log('处理后的座位列表:', availableSeats.value)
-  } catch (error) {
-    console.error('获取座位列表失败:', error)
-    ElMessage.error('获取座位列表失败')
+const seatPinStyle = (seat) => {
+  const x = Number.isFinite(seat.posX) ? seat.posX : 0
+  const y = Number.isFinite(seat.posY) ? seat.posY : 0
+  return {
+    left: `${x}%`,
+    top: `${y}%`
   }
 }
 
-// 监听自习室和日期变化
+const normalizeFloorPlanUrl = (url) => {
+  if (!url) return ''
+  const backendOrigin = import.meta.env.VITE_BACKEND_ORIGIN || 'http://localhost:8080'
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  if (url.startsWith('/')) return `${backendOrigin}${url}`
+  return `${backendOrigin}/${url}`
+}
+
 const handleRoomChange = () => {
   selectedSeat.value = null
   if (form.value.date && form.value.startTime && form.value.endTime) {
@@ -362,626 +349,618 @@ const handleRoomChange = () => {
 
 const handleDateChange = () => {
   selectedSeat.value = null
-  if (form.value.startTime && form.value.endTime) {
+  if (form.value.roomId && form.value.startTime && form.value.endTime) {
     fetchAvailableSeats()
   }
 }
 
 const handleTimeChange = () => {
-  if (form.value.startTime && form.value.endTime) {
-    const now = dayjs();
-    // 保证start和end的日期部分和form.value.date一致
-    const start = dayjs(`${form.value.date} ${dayjs(form.value.startTime).format('HH:mm')}`);
-    const end = dayjs(`${form.value.date} ${dayjs(form.value.endTime).format('HH:mm')}`);
-
-    // 只在选择当天时校验
-    if (form.value.date === now.format('YYYY-MM-DD')) {
-      const fiveMinutesAgo = now.subtract(5, 'minute');
-      if (start.isBefore(fiveMinutesAgo)) {
-        ElMessage.warning('开始时间不能早于当前时间前5分钟');
-        form.value.startTime = null;
-        return;
-      }
-    }
-
-    if (end.isBefore(start)) {
-      ElMessage.warning('结束时间不能早于开始时间');
-      form.value.endTime = null;
-    } else {
-      const duration = end.diff(start, 'minute');
-      if (duration < 30) {
-        ElMessage.warning('预约时长不能少于30分钟');
-        form.value.endTime = null;
-      } else {
-        fetchAvailableSeats();
-      }
-    }
+  selectedSeat.value = null
+  if (form.value.roomId && form.value.date && form.value.startTime && form.value.endTime) {
+    fetchAvailableSeats()
   }
 }
 
 const selectSeat = (seat) => {
-  if (seat.status === 'reserved' || seat.status === 'unavailable') {
-    ElMessage.warning(seat.status === 'reserved' ? '该座位已被预约' : '该座位不可用')
+  if (seat.status === 'reserved') {
+    ElMessage.warning('该座位已被预约')
     return
   }
   selectedSeat.value = seat
 }
 
-const getSeatStatusType = (status) => {
-  const types = {
-    available: 'success',
-    reserved: 'warning',
-    occupied: 'danger'
-  }
-  return types[status] || 'info'
-}
-
-const formatTime = (time) => {
-  return time ? dayjs(time).format('HH:mm') : ''
-}
-
-const calculatePrice = () => {
-  if (!selectedRoom.value || !duration.value) return 0
-  return ((duration.value / 60) * selectedRoom.value.pricePerHour).toFixed(2)
-}
-
-// 检查预约冲突
-const checkReservationConflict = async () => {
+const fetchAvailableSeats = async () => {
   if (!form.value.roomId || !form.value.date || !form.value.startTime || !form.value.endTime) {
-    return false
+    return
   }
-
+  
+  loading.value = true
   try {
+    const room = await studyRoomApi.getRoomById(form.value.roomId)
+    floorPlanUrl.value = normalizeFloorPlanUrl(room?.floorPlanUrl || '')
+
+    const seats = await seatApi.getSeatsByRoom(form.value.roomId)
+    
     const startTime = `${form.value.date}T${formatTime(form.value.startTime)}:00`
     const endTime = `${form.value.date}T${formatTime(form.value.endTime)}:00`
     
-    // 获取该座位当天的所有预约记录
     const dayStart = `${form.value.date}T00:00:00`
     const dayEnd = `${form.value.date}T23:59:59`
     const reservations = await reservationApi.getReservationsByTimeRange(dayStart, dayEnd)
     
-    // 检查是否有冲突的预约，只考虑状态为PENDING的预约
-    const hasConflict = reservations.some(reservation => {
-      // 检查是否是同一个座位且状态为PENDING
-      if (reservation.seatId === selectedSeat.value.id && reservation.status === 'PENDING') {
-        // 检查时间是否重叠
+    availableSeats.value = seats.map(seat => {
+      const seatReservations = reservations.filter(reservation => 
+        reservation.seatId === seat.id && 
+        (reservation.status === 'PENDING' || reservation.status === 'CONFIRMED' || reservation.status === 'IN_USE')
+      )
+      
+      const hasConflict = seatReservations.some(reservation => {
         const reservationStart = dayjs(reservation.startTime)
         const reservationEnd = dayjs(reservation.endTime)
-        const newStart = dayjs(startTime)
-        const newEnd = dayjs(endTime)
+        const selectedStart = dayjs(startTime)
+        const selectedEnd = dayjs(endTime)
         
-        // 检查时间是否重叠
-        const isOverlapping = (
-          // 新预约的开始时间在已有预约的时间段内
-          (newStart.isAfter(reservationStart) && newStart.isBefore(reservationEnd)) ||
-          // 新预约的结束时间在已有预约的时间段内
-          (newEnd.isAfter(reservationStart) && newEnd.isBefore(reservationEnd)) ||
-          // 新预约完全包含已有预约
-          (newStart.isBefore(reservationStart) && newEnd.isAfter(reservationEnd)) ||
-          // 新预约与已有预约的开始时间相同
-          newStart.isSame(reservationStart) ||
-          // 新预约与已有预约的结束时间相同
-          newEnd.isSame(reservationEnd) ||
-          // 新预约完全被已有预约包含
-          (newStart.isAfter(reservationStart) && newEnd.isBefore(reservationEnd))
-        )
-        
-        console.log(`检查座位 ${selectedSeat.value.number} 的时间冲突:`, {
-          reservationTime: `${reservationStart.format('HH:mm')} - ${reservationEnd.format('HH:mm')}`,
-          selectedTime: `${newStart.format('HH:mm')} - ${newEnd.format('HH:mm')}`,
-          isOverlapping
-        })
-        
-        return isOverlapping
+        // 使用与后端相同的时间重叠逻辑
+        return !(selectedEnd.isBefore(reservationStart) || selectedStart.isAfter(reservationEnd))
+      })
+      
+      return {
+        id: seat.id,
+        number: seat.seatNumber,
+        seatNumber: seat.seatNumber,
+        roomId: seat.roomId,
+        price: seat.price,
+        posX: seat.posX,
+        posY: seat.posY,
+        status: hasConflict ? 'reserved' : 'available',
+        statusText: hasConflict ? '已被预约' : '可用'
       }
-      return false
     })
-    
-    if (hasConflict) {
-      ElMessage.warning('所选时间段已被预约，请选择其他时间')
-      return true
-    }
-    
-    return false
   } catch (error) {
-    console.error('检查预约冲突失败:', error)
-    ElMessage.error('检查预约冲突失败，请稍后重试')
-    return true
+    console.error('获取座位列表失败:', error)
+    ElMessage.error('获取座位列表失败')
+  } finally {
+    loading.value = false
   }
 }
 
-const submitReservation = async () => {
-  if (!form.value.roomId || !form.value.date || !form.value.startTime || 
-      !form.value.endTime || !selectedSeat.value) {
-    ElMessage.warning('请填写完整的预约信息')
+const handleSubmit = async () => {
+  if (!selectedSeat.value) {
+    ElMessage.warning('请选择座位')
     return
   }
-
+  
+  // 获取当前登录用户
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+  if (!userInfo.id) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+  
+  submitting.value = true
   try {
-    loading.value = true
+    const startTime = `${form.value.date}T${formatTime(form.value.startTime)}:00`
+    const endTime = `${form.value.date}T${formatTime(form.value.endTime)}:00`
     
-    // 检查预约冲突
-    const hasConflict = await checkReservationConflict()
-    if (hasConflict) {
+    // 1. 创建预约
+    const reservation = await reservationApi.createReservation({
+      seatId: selectedSeat.value.id,
+      userId: userInfo.id,
+      startTime,
+      endTime
+    })
+    
+    // 3. 保存预约信息用于支付对话框
+    paymentInfo.value = {
+      seatNumber: selectedSeat.value.seatNumber,
+      startTime: form.value.startTime,
+      endTime: form.value.endTime,
+      date: form.value.date
+    }
+    
+    // 4. 显示支付对话框
+    showPaymentDialog.value = true
+    currentReservation.value = reservation
+    
+  } catch (error) {
+    console.error('预约失败:', error)
+    ElMessage.error(error.response?.data?.message || '预约失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+// 支付相关方法
+const loadUserBalance = async () => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    const data = await paymentApi.getUserBalance(userInfo.id)
+    userBalance.value = data.balance || 0
+  } catch (error) {
+    console.error('获取余额失败:', error)
+  }
+}
+
+const calculatePrice = () => {
+  console.log('calculatePrice called')
+  console.log('selectedSeat.value:', selectedSeat.value)
+  console.log('paymentInfo.value:', paymentInfo.value)
+  
+  if (!selectedSeat.value) {
+    console.log('selectedSeat is null')
+    return '0.00'
+  }
+  
+  if (!paymentInfo.value.startTime || !paymentInfo.value.endTime) {
+    console.log('startTime or endTime is null')
+    return '0.00'
+  }
+  
+  const duration = calculateDuration(paymentInfo.value.startTime, paymentInfo.value.endTime)
+  console.log('duration:', duration, 'minutes')
+  
+  const units = Math.ceil(duration / 30) // 每30分钟一个单位
+  console.log('units:', units)
+  
+  // 修复：确保price是数字，如果是字符串则转换
+  let seatPrice = selectedSeat.value.price || 0
+  if (typeof seatPrice === 'string') {
+    seatPrice = parseFloat(seatPrice) || 0
+  }
+  
+  // 如果价格仍然为0或无效，使用默认价格
+  if (seatPrice <= 0 || isNaN(seatPrice)) {
+    // 根据房间类型设置默认价格
+    const roomId = selectedSeat.value.roomId
+    if (roomId === 1) seatPrice = 1.5  // 静音自习室
+    else if (roomId === 2) seatPrice = 2.0  // 自习室B
+    else if (roomId === 3) seatPrice = 3.0  // 讨论自习室
+    else seatPrice = 2.0  // 默认价格
+    console.log('Using default price:', seatPrice)
+  }
+  
+  console.log('seatPrice:', seatPrice)
+  
+  const price = seatPrice * units
+  console.log('calculated price:', price)
+  
+  return isNaN(price) ? '0.00' : price.toFixed(2)
+}
+
+const handlePayment = async () => {
+  paying.value = true
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    const amountStr = calculatePrice()
+    const amount = parseFloat(amountStr)
+    
+    if (isNaN(amount) || amount <= 0) {
+      ElMessage.error('金额计算错误')
       return
     }
     
-    // 构造预约数据
-    const reservationData = {
-      roomId: form.value.roomId,
-      seatId: selectedSeat.value.id,
-      userId: JSON.parse(localStorage.getItem('userInfo')).id,
-      date: form.value.date,
-      startTime: `${form.value.date}T${formatTime(form.value.startTime)}:00`,
-      endTime: `${form.value.date}T${formatTime(form.value.endTime)}:00`,
-      duration: duration.value,
-      totalPrice: calculatePrice(),
-      status: 'PENDING'
-    }
-    
-    console.log('提交预约数据:', reservationData)
-    
-    // 调用预约API
-    const response = await reservationApi.createReservation(reservationData)
-    console.log('预约响应:', response)
-    
-    if (response) {
-      // 注意：根据需求，预约成功后不修改座位表中的座位状态
-      // 座位的可用状态将通过 fetchAvailableSeats 函数在查询时动态计算
-      
-      ElMessage.success('预约成功')
-      // 重置表单
-      form.value = {
-        roomId: '',
-        date: '',
-        startTime: null,
-        endTime: null
+    if (paymentMethod.value === 'BALANCE') {
+      // 余额支付 - 先检查余额
+      const balanceData = await paymentApi.getUserBalance(userInfo.id)
+      const balance = balanceData?.balance || 0
+      if (balance < amount) {
+        ElMessage.warning('余额不足，请先充值')
+        // 取消预约，不保留记录
+        try {
+          await reservationApi.cancelReservation(currentReservation.value.id)
+        } catch (e) {
+          console.error('取消预约失败:', e)
+        }
+        showPaymentDialog.value = false
+        router.push('/payment')
+        return
       }
-      selectedSeat.value = null
-      // 刷新可用座位列表
-      await fetchAvailableSeats()
+      const payResult = await paymentApi.balancePayment(userInfo.id, currentReservation.value.id, amount)
+      if (!payResult) {
+        ElMessage.error('支付失败')
+        try {
+          await reservationApi.cancelReservation(currentReservation.value.id)
+        } catch (e) {
+          console.error('取消预约失败:', e)
+        }
+        showPaymentDialog.value = false
+        return
+      }
+      ElMessage.success('支付成功')
+      
     } else {
-      throw new Error('预约失败')
+      // 第三方支付 - 跳转到第三方支付页面
+      router.push({
+        path: '/third-party-payment',
+        query: {
+          orderId: 'ORDER' + Date.now(),
+          amount: amountStr,
+          subject: '自习室预约',
+          description: `座位${paymentInfo.value.seatNumber}预约`,
+          paymentMethod: paymentMethod.value,
+          reservationId: currentReservation.value.id,
+          userId: userInfo.id
+        }
+      })
+      return
     }
+    
+    // 支付成功，关闭对话框，重置表单
+    showPaymentDialog.value = false
+    form.value = {
+      roomId: '',
+      date: '',
+      startTime: null,
+      endTime: null
+    }
+    selectedSeat.value = null
+    fetchAvailableSeats()
+    
   } catch (error) {
-    console.error('预约失败:', error)
-    ElMessage.error(error.response?.data?.message || '预约失败，请稍后重试')
+    console.error('支付失败:', error)
+    ElMessage.error(error.response?.data?.message || '支付失败')
+    // 支付失败，取消预约，不保留任何记录
+    try {
+      await reservationApi.cancelReservation(currentReservation.value.id)
+    } catch (e) {
+      console.error('取消预约失败:', e)
+    }
+    showPaymentDialog.value = false
   } finally {
-    loading.value = false
+    paying.value = false
+  }
+}
+
+const cancelPayment = async () => {
+  try {
+    // 取消预约
+    await reservationApi.cancelReservation(currentReservation.value.id)
+    ElMessage.info('预约已取消')
+  } catch (error) {
+    console.error('取消预约失败:', error)
+  }
+  
+  showPaymentDialog.value = false
+  currentReservation.value = null
+  paymentInfo.value = {
+    seatNumber: '',
+    startTime: null,
+    endTime: null,
+    date: ''
   }
 }
 
 onMounted(() => {
   if (!checkLoginStatus()) return
   fetchRooms()
+  loadUserBalance()
 })
 </script>
 
 <style scoped>
-.reservations {
-  padding: 20px;
+.reservations-page {
+  padding: 40px;
+  background: #fafafa;
+  min-height: 100vh;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.page-header {
+  max-width: 1400px;
+  margin: 0 auto 32px;
 }
 
-.card-header h2 {
+.page-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.page-header p {
+  font-size: 16px;
+  color: #6b7280;
   margin: 0;
-  font-size: 18px;
-  color: #2c3e50;
+}
+
+.content-card {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 24px;
+}
+
+.subsection-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
 }
 
 .reservation-form {
   max-width: 1200px;
-  margin: 0 auto;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #374151;
+}
+
+:deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #e5e7eb;
+  border-radius: 10px;
+  padding: 4px 16px;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+:deep(.el-select) {
+  width: 100%;
 }
 
 .seat-selection {
-  margin-top: 30px;
-}
-
-.seat-selection h3 {
-  margin-bottom: 20px;
-  color: #2c3e50;
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid #f3f4f6;
 }
 
 .seat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.floorplan-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.floorplan-stage {
+  position: relative;
   width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.floorplan-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.seat-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 54px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111827;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: all 0.15s ease;
+}
+
+.seat-pin:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.18);
+}
+
+.seat-pin.selected {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.10);
+  color: #1d4ed8;
+}
+
+.seat-pin.reserved {
+  border-color: #fecaca;
+  background: rgba(254, 242, 242, 0.95);
+  color: #991b1b;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.floorplan-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  background: #fafafa;
+  color: #374151;
+  font-size: 13px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.dot.available {
+  background: #22c55e;
+}
+
+.dot.reserved {
+  background: #ef4444;
+}
+
+.dot.selected {
+  background: #3b82f6;
 }
 
 .seat-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
-  padding: 12px;
-  width: 100%;
-  box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
 .seat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .seat-card.selected {
-  border-color: #409EFF;
-  background-color: #ecf5ff;
+  border-color: #3b82f6;
+  background: #eff6ff;
 }
 
 .seat-card.reserved {
+  border-color: #fee2e2;
+  background: #fef2f2;
   cursor: not-allowed;
   opacity: 0.7;
-  background-color: #fdf6ec;
-}
-
-.seat-card.reserved:hover {
-  transform: none;
-  box-shadow: none;
 }
 
 .seat-number {
-  font-size: 24px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
 }
 
-.seat-status {
-  text-align: center;
+.seat-card.selected .seat-number {
+  color: #3b82f6;
 }
 
 .reservation-summary {
-  margin-top: 30px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  margin-top: 40px;
+  padding: 32px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
-.reservation-summary h3 {
-  margin-bottom: 20px;
-  color: #2c3e50;
+.summary-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.price {
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-item .label {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.summary-item .value {
+  font-size: 17px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 52px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: none;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+}
+
+.payment-info h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.info-item.total {
+  font-weight: 600;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.amount {
   color: #f56c6c;
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 18px;
+  font-weight: 700;
 }
 
-.form-actions {
-  margin-top: 20px;
-  text-align: center;
-}
-
-:deep(.el-descriptions__label) {
-  width: 120px;
-  color: #606266;
-}
-
-:deep(.el-descriptions__content) {
-  color: #303133;
-}
-
-.reservation-times {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #666;
-}
-
-.time-slot {
-  padding: 2px 4px;
-  background: #f5f5f5;
-  border-radius: 4px;
-  margin: 2px 0;
-}
-
-/* 响应式布局 */
-@media screen and (max-width: 768px) {
-  .reservations {
-    padding: 12px;
-  }
-
-  .card-header h2 {
-    font-size: 16px;
-  }
-
-  .reservation-form {
-    padding: 0;
-    width: 100%;
-  }
-
-  /* 表单布局优化 */
-  :deep(.el-form-item) {
-    margin-bottom: 16px;
-    width: 100%;
-  }
-
-  :deep(.el-form-item__label) {
-    float: none;
-    display: block;
-    text-align: left;
-    padding: 0 0 8px;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.4;
-  }
-
-  :deep(.el-form-item__content) {
-    margin-left: 0 !important;
-    line-height: 1.4;
-    width: 100%;
-  }
-
-  :deep(.el-select),
-  :deep(.el-date-picker),
-  :deep(.el-time-picker) {
-    width: 100% !important;
-  }
-
-  :deep(.el-input__wrapper) {
-    padding: 8px 12px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  :deep(.el-input__inner) {
-    font-size: 14px;
-    width: 100%;
-  }
-
-  /* 座位选择区域优化 */
-  .seat-selection {
-    margin-top: 20px;
-    width: 100%;
-  }
-
-  .seat-selection h3 {
-    font-size: 16px;
-    margin-bottom: 16px;
-  }
-
-  .seat-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 8px !important;
-    width: 100% !important;
-    box-sizing: border-box;
-    padding: 0 !important;
-    margin-bottom: 16px !important;
-  }
-
-  .seat-card {
-    width: 100% !important;
-    padding: 8px !important;
-    margin: 0 !important;
-    box-sizing: border-box;
-  }
-
-  .seat-card :deep(.el-card__body) {
-    padding: 8px !important;
-    width: 100% !important;
-    box-sizing: border-box;
-  }
-
-  .seat-number {
-    font-size: 16px !important;
-    margin-bottom: 4px !important;
-  }
-
-  .seat-status :deep(.el-tag) {
-    padding: 0 4px !important;
-    font-size: 11px !important;
-    height: auto !important;
-    line-height: 1.5 !important;
-  }
-
-  /* 预约信息确认区域优化 */
-  .reservation-summary {
-    margin-top: 20px;
-    padding: 16px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .reservation-summary h3 {
-    font-size: 16px;
-    margin-bottom: 16px;
-  }
-
-  :deep(.el-descriptions) {
-    font-size: 14px;
-    width: 100%;
-  }
-
-  :deep(.el-descriptions__label) {
-    width: 90px;
-    font-size: 13px;
-    padding: 8px;
-    line-height: 1.4;
-  }
-
-  :deep(.el-descriptions__content) {
-    font-size: 13px;
-    padding: 8px;
-    line-height: 1.4;
-    word-break: break-word;
-  }
-
-  .price {
-    font-size: 16px;
-  }
-
-  /* 按钮优化 */
-  .form-actions {
-    margin-top: 16px;
-    width: 100%;
-  }
-
-  :deep(.el-button) {
-    width: 100%;
-    margin: 0;
-    padding: 10px 16px;
-    font-size: 14px;
-  }
-
-  /* 行列布局优化 */
-  :deep(.el-row) {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    width: 100%;
-  }
-
-  :deep(.el-col) {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
-  }
-
-  /* 时间选择器优化 */
-  :deep(.el-date-editor.el-input),
-  :deep(.el-date-editor.el-input__wrapper),
-  :deep(.el-time-picker),
-  :deep(.el-time-picker__editor-wrap) {
-    width: 100% !important;
-  }
-
-  :deep(.el-date-picker),
-  :deep(.el-time-panel) {
-    width: 280px !important;
-  }
-
-  /* 描述列表优化 */
-  :deep(.el-descriptions__body) {
-    background-color: #fff;
-  }
-
-  :deep(.el-descriptions__table) {
-    width: 100%;
-    table-layout: fixed;
-  }
-
-  :deep(.el-descriptions__cell) {
-    padding: 8px;
-  }
-
-  /* 修复时间选择器和下拉菜单在移动端的显示问题 */
-  :deep(.el-select__popper),
-  :deep(.el-picker__popper) {
-    width: 80vw !important;
-    max-width: 300px;
-  }
-
-  /* 修复日期和时间选择器在移动端的显示 */
-  :deep(.el-date-picker),
-  :deep(.el-time-picker) {
-    --el-date-editor-width: 100%;
-  }
-
-  /* 修复卡片容器宽度问题 */
-  :deep(.el-card) {
-    width: 100% !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
+/* 响应式 */
+@media (max-width: 768px) {
+  .reservations-page {
+    padding: 20px 16px;
   }
   
-  :deep(.el-card__body) {
-    width: 100% !important;
-    box-sizing: border-box;
-    padding: 16px !important;
+  .content-card {
+    padding: 20px;
   }
-}
+  
+  .seat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+  }
 
-/* 平板设备适配 */
-@media screen and (min-width: 769px) and (max-width: 1024px) {
-  .reservations {
+  .seat-pin {
+    min-width: 46px;
+    height: 30px;
+    font-size: 11px;
+    padding: 0 8px;
+  }
+  
+  .seat-card {
     padding: 16px;
   }
-
-  .seat-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  
+  .summary-content {
+    grid-template-columns: 1fr;
   }
-
-  :deep(.el-form-item__label) {
-    font-size: 14px;
-  }
-
-  :deep(.el-select),
-  :deep(.el-date-picker),
-  :deep(.el-time-picker) {
-    width: 100% !important;
-  }
-
-  /* 平板设备表单布局优化 */
-  :deep(.el-row) {
-    flex-wrap: wrap;
-  }
-
-  :deep(.el-col) {
-    width: 50% !important;
-    max-width: 50% !important;
-    flex: 0 0 50% !important;
-  }
-}
-
-/* 表单元素样式优化 */
-:deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px #dcdfe6;
-  transition: all 0.3s;
-}
-
-:deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--primary-color);
-}
-
-:deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--primary-color);
-}
-
-:deep(.el-select .el-input__wrapper) {
-  cursor: pointer;
-}
-
-:deep(.el-date-editor.el-input),
-:deep(.el-date-editor.el-input__inner) {
-  width: 100%;
-}
-
-/* 时间选择器样式优化 */
-:deep(.el-time-picker__editor-wrap) {
-  padding: 0;
-}
-
-:deep(.el-time-picker__editor) {
-  padding: 0 8px;
-}
-
-/* 描述列表样式优化 */
-:deep(.el-descriptions__body) {
-  background-color: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-:deep(.el-descriptions__table) {
-  width: 100%;
-}
-
-:deep(.el-descriptions__cell) {
-  padding: 12px;
-}
-
-:deep(.el-descriptions__label) {
-  font-weight: 500;
-}
-
-:deep(.el-descriptions__content) {
-  word-break: break-all;
 }
 </style>
